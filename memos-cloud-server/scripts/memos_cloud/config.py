@@ -14,6 +14,7 @@ DEFAULT_BASE_URL = "https://memos.memtensor.cn/api/openmem/v1"
 class MemosConfig:
     base_url: str
     api_key: str
+    user_id: Optional[str] = None
 
     @property
     def headers(self) -> dict[str, str]:
@@ -32,4 +33,5 @@ def load_config(env: Optional[Mapping[str, str]] = None) -> MemosConfig:
     return MemosConfig(
         base_url=source.get("MEMOS_CLOUD_URL", DEFAULT_BASE_URL).rstrip("/"),
         api_key=api_key,
+        user_id=source.get("MEMOS_USER_ID") or None,
     )

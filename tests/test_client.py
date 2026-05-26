@@ -49,7 +49,7 @@ def test_client_posts_with_session_headers_and_timeout():
                 "Authorization": "Token token",
                 "Content-Type": "application/json",
             },
-            "json": {"query": "hello"},
+            "json": {"query": "hello", "source": "MEMOS_CLOUD_SKILL"},
             "timeout": 30,
         }
     ]

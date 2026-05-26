@@ -9,6 +9,7 @@ from .errors import ApiError, NetworkError
 
 
 DEFAULT_TIMEOUT = 30
+SOURCE_VALUE = "MEMOS_CLOUD_SKILL"
 
 
 class MemosClient:
@@ -24,11 +25,12 @@ class MemosClient:
 
     def post(self, endpoint: str, payload: Mapping[str, Any]) -> Any:
         url = f"{self.config.base_url}/{endpoint.lstrip('/')}"
+        body = {**payload, "source": SOURCE_VALUE}
         try:
             response = self.session.post(
                 url,
                 headers=self.config.headers,
-                json=payload,
+                json=body,
                 timeout=self.timeout,
             )
             response.raise_for_status()

@@ -17,12 +17,12 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     p_search = subparsers.add_parser("search", help="Search memory")
-    p_search.add_argument("user_id", help="User ID")
+    p_search.add_argument("user_id", nargs="?", default=None, help="User ID (falls back to MEMOS_USER_ID env var)")
     p_search.add_argument("query", help="Search query string")
     p_search.add_argument("--conversation-id", help="Optional conversation ID")
 
     p_add = subparsers.add_parser("add_message", help="Add a message memory")
-    p_add.add_argument("user_id", help="User ID")
+    p_add.add_argument("user_id", nargs="?", default=None, help="User ID (falls back to MEMOS_USER_ID env var)")
     p_add.add_argument("conversation_id", help="Conversation ID")
     p_add.add_argument(
         "messages",
@@ -33,7 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_del.add_argument("memory_ids", help="Comma-separated list of memory IDs to delete (Required)")
 
     p_fb = subparsers.add_parser("add_feedback", help="Add feedback")
-    p_fb.add_argument("user_id", help="User ID")
+    p_fb.add_argument("user_id", nargs="?", default=None, help="User ID (falls back to MEMOS_USER_ID env var)")
     p_fb.add_argument("conversation_id", help="Conversation ID")
     p_fb.add_argument("feedback_content", help="Feedback content text")
     p_fb.add_argument("--allow-knowledgebase-ids", help="Comma-separated list of knowledgebase IDs")
@@ -83,12 +83,21 @@ def main(
         return 1
 
 
+def _resolve_user_id(args: argparse.Namespace, client: MemosClient) -> str:
+    user_id = getattr(args, "user_id", None) or client.config.user_id
+    if not user_id:
+        raise ValidationError(
+            "user_id is required. Provide it as an argument or set MEMOS_USER_ID env var."
+        )
+    return user_id
+
+
 def dispatch(args: argparse.Namespace, client: MemosClient, stdin_buffer):
     if args.command == "search":
-        return search_memory(client, args.user_id, args.query, args.conversation_id)
+        return search_memory(client, _resolve_user_id(args, client), args.query, args.conversation_id)
 
     if args.command == "add_message":
-        return add_message(client, args.user_id, args.conversation_id, args.messages)
+        return add_message(client, _resolve_user_id(args, client), args.conversation_id, args.messages)
 
     if args.command == "delete":
         return delete_memory(client, args.memory_ids)
@@ -96,7 +105,7 @@ def dispatch(args: argparse.Namespace, client: MemosClient, stdin_buffer):
     if args.command == "add_feedback":
         return add_feedback(
             client,
-            args.user_id,
+            _resolve_user_id(args, client),
             args.conversation_id,
             args.feedback_content,
             args.allow_knowledgebase_ids,
