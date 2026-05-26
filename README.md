@@ -2,7 +2,7 @@
 
 [English](README.md) | [中文](README_zh.md)
 
-MemOS Cloud Server API skill. This skill allows Agents or developers to directly call the MemOS Cloud Platform API to retrieve, add, delete, and feedback on memories.
+MemOS Cloud Server API skill. This skill allows Agents or developers to directly call the MemOS Cloud Platform API to retrieve, add, delete, upload, and feedback on memories.
 
 ## Prerequisites
 
@@ -13,17 +13,22 @@ MemOS Cloud Server API skill. This skill allows Agents or developers to directly
 
 ### Option A — Command Line (Recommended)
 
+Install from GitHub:
+
 ```bash
-npx skills add https://github.com/MemTensor/MemOS-Cloud-Skill
+npx skills add https://github.com/MemTensor/MemOS-Cloud-Skill/memos-cloud-server
 ```
 
-### Option B — Manual Install
+### Option B — Local Path
 
 1. Clone this repository to your local machine:
     ```bash
     git clone https://github.com/MemTensor/MemOS-Cloud-Skill.git
     ```
-2. Manually copy the skill folder to your corresponding agent skills directory.
+2. Install from the local skill directory:
+    ```bash
+    npx skills add ./MemOS-Cloud-Skill/memos-cloud-server
+    ```
 
 ## Environment Variables
 
@@ -48,6 +53,10 @@ MEMOS_USER_ID=YOUR_USER_ID
 
 - `MEMOS_CLOUD_URL` (default: `https://memos.memtensor.cn/api/openmem/v1`)
 
+```env
+MEMOS_CLOUD_URL=https://memos.memtensor.cn/api/openmem/v1
+```
+
 ### Quick setup (shell)
 
 ```bash
@@ -65,29 +74,32 @@ source ~/.bashrc
 
 ## How it Works / Usage
 
-Once installed and configured, this skill empowers your AI Agent (e.g., Trae, Cursor, OpenClaw) to manage your long-term memories autonomously. Simply communicate with your Agent through natural language, and it will intelligently decide when to call the underlying MemOS APIs based on your conversations.
+Once installed and configured, this skill empowers your AI Agent to manage your long-term memories autonomously. You can directly use natural language with your Agent, and the Agent will call the underlying MemOS APIs based on conversation context.
 
 ### 1. Add Message (`/v1/add/message`)
 
-When you share preferences, facts, or instructions you want the Agent to remember, it will automatically extract the high-value content and save it to the MemOS cloud.
+When you share preferences, facts, or instructions you want the Agent to remember, it will extract high-value content and save it to the MemOS cloud.
 
-**Example Conversation:**
+Example conversation:
+
 - **You:** "Please remember that my primary programming language is Python and I prefer dark mode."
 - **Agent:** *(Recognizes intent -> Calls `add_message` skill)* "Got it! I've saved your preferences about Python and dark mode."
 
 ### 2. Search Memory (`/v1/search/memory`)
 
-Before answering complex questions or when explicitly asked, the Agent will search your past memories to provide highly personalized responses.
+Before answering complex questions or when explicitly asked, the Agent searches your past memories to provide personalized responses.
 
-**Example Conversation:**
+Example conversation:
+
 - **You:** "Write a boilerplate script for my usual tech stack."
-- **Agent:** *(Recognizes intent -> Calls `search` skill to retrieve your python preferences)* "Sure! Here is a set of Python boilerplate code..."
+- **Agent:** *(Recognizes intent -> Calls `search` skill)* "Sure! Here is a set of Python boilerplate code..."
 
 ### 3. Delete Memory (`/v1/delete/memory`)
 
-If a memory is outdated or incorrect, simply tell the Agent to forget it.
+If a memory is outdated or incorrect, tell the Agent to forget it.
 
-**Example Conversation:**
+Example conversation:
+
 - **You:** "Forget my previous residential address, I've moved."
 - **Agent:** *(Recognizes intent -> Calls `delete` skill)* "I have removed your old address from my memory."
 
@@ -95,6 +107,39 @@ If a memory is outdated or incorrect, simply tell the Agent to forget it.
 
 You can correct the Agent's behavior, and it will reinforce its memory for future interactions.
 
-**Example Conversation:**
+Example conversation:
+
 - **You:** "Your last answer wasn't detailed enough. Next time, always provide code comments."
 - **Agent:** *(Recognizes intent -> Calls `add_feedback` skill)* "Understood. I will add more details and code comments in the future."
+
+### 5. Add Knowledge Base Document (`/v1/add/knowledgebase-file`)
+
+Upload URLs, local files, or stdin content to a knowledge base.
+
+```bash
+# From files or URLs
+python3 scripts/memos_cloud.py add_kb_doc <knowledgebase_id> <file1> [file2 ...] [--type document|skill]
+
+# From stdin
+python3 scripts/memos_cloud.py add_kb_doc <knowledgebase_id> --stdin [--name filename.ext] [--type document|skill]
+```
+
+Local files are encoded as base64 automatically. With `--stdin`, content that is already valid base64 is used as-is; other bytes are encoded before upload.
+
+## Direct Script Usage
+
+The installed skill executes commands through `scripts/memos_cloud.py`:
+
+```bash
+python3 scripts/memos_cloud.py search <user_id> "<query>" [--conversation-id <id>]
+python3 scripts/memos_cloud.py add_message <user_id> <conversation_id> '<messages_json_string>'
+python3 scripts/memos_cloud.py delete "id1,id2,id3"
+python3 scripts/memos_cloud.py add_feedback <user_id> <conversation_id> "<feedback_content>" [--allow-knowledgebase-ids "kb1,kb2"]
+python3 scripts/memos_cloud.py add_kb_doc <knowledgebase_id> <file1> [file2 ...] [--type document|skill]
+```
+
+For repository-local testing before installation:
+
+```bash
+python3 memos-cloud-server/scripts/memos_cloud.py --help
+```

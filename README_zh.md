@@ -14,7 +14,7 @@ MemOS Cloud Server API 技能。该技能允许 Agent 或开发者直接调用 M
 ### 方式一：使用命令安装（推荐）
 
 ```bash
-npx skills add https://github.com/MemTensor/MemOS-Cloud-Skill
+npx skills add https://github.com/MemTensor/MemOS-Cloud-Skill/memos-cloud-server
 ```
 
 ### 方式二：本地克隆并手动复制安装
@@ -23,7 +23,10 @@ npx skills add https://github.com/MemTensor/MemOS-Cloud-Skill
     ```bash
     git clone https://github.com/MemTensor/MemOS-Cloud-Skill.git
     ```
-2. 手动将技能文件夹复制到你对应的 agent 技能库目录中进行引入即可。
+2. 手动将技能文件夹复制到你对应的 agent 技能库目录或者使用命令安装：
+    ```bash
+    npx skills add ./MemOS-Cloud-Skill/memos-cloud-server
+    ```
 
 ## 配置环境变量 (Environment Variables)
 
@@ -103,3 +106,16 @@ source ~/.bashrc
 - **用户：** “刚才的回答不够详细，以后请记得多加一些代码注释。”
 - **Agent：** _(识别意图 -> 自动调用 `add_feedback` 技能)_ “收到，今后的代码我会提供更详细的注释说明。”
 
+### 5. 上传知识库文档 (Add Knowledge Base Document)
+
+支持将 URL、本地文件或 stdin 内容上传到知识库。
+
+```bash
+# 从文件或 URL 上传
+python3 scripts/memos_cloud.py add_kb_doc <knowledgebase_id> <file1> [file2 ...] [--type document|skill]
+
+# 从 stdin 上传
+python3 scripts/memos_cloud.py add_kb_doc <knowledgebase_id> --stdin [--name filename.ext] [--type document|skill]
+```
+
+本地文件会自动编码为 base64。使用 `--stdin` 时，如果输入已经是合法 base64，会原样使用；否则会先编码再上传。
