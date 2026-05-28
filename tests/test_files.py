@@ -33,7 +33,7 @@ def test_build_stdin_file_payload_adds_name_when_provided():
     assert payload == {
         "type": "skill",
         "name": "note.txt",
-        "content": base64.b64encode(b"hello").decode("utf-8"),
+        "content": "data:text/plain;base64," + base64.b64encode(b"hello").decode("utf-8"),
     }
 
 
@@ -51,7 +51,8 @@ def test_build_file_payloads_reads_local_file(tmp_path):
         {
             "type": "skill",
             "name": "doc.txt",
-            "content": base64.b64encode(b"hello").decode("utf-8"),
+            "content": "data:text/plain;base64," + base64.b64encode(b"hello").decode("utf-8"),
+            "mime_type": "text/plain",
         }
     ]
 

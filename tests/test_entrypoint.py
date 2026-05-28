@@ -54,3 +54,8 @@ def test_top_level_import_preserves_public_functions():
     assert callable(memos_cloud.delete_memory)
     assert callable(memos_cloud.add_feedback)
     assert callable(memos_cloud.add_kb_doc)
+    assert callable(memos_cloud.get_user_profile)
+    assert callable(memos_cloud.create_knowledge_base)
+    assert callable(memos_cloud.get_kb_documents)
+    assert callable(memos_cloud.delete_kb_documents)
+    assert callable(memos_cloud.remove_knowledge_base)

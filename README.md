@@ -49,12 +49,20 @@ MEMOS_API_KEY=YOUR_TOKEN
 MEMOS_USER_ID=YOUR_USER_ID
 ```
 
-### Optional config
+### Optional
 
-- `MEMOS_CLOUD_URL` (default: `https://memos.memtensor.cn/api/openmem/v1`)
+- `MEMOS_CLOUD_URL` — API base URL (default: `https://memos.memtensor.cn/api/openmem/v1`)
+- `MEMOS_AGENT_ID` — Agent identifier for multi-agent scenarios
+- `MEMOS_APP_ID` — Application identifier for multi-app scenarios
+- `MEMOS_ALLOW_PUBLIC` — Allow public memory access, `true`/`false` (default: `false`)
+- `MEMOS_ASYNC_MODE` — Enable async memory addition, `true`/`false` (default: `true`)
 
 ```env
 MEMOS_CLOUD_URL=https://memos.memtensor.cn/api/openmem/v1
+MEMOS_AGENT_ID=your-agent-id
+MEMOS_APP_ID=your-app-id
+MEMOS_ALLOW_PUBLIC=false
+MEMOS_ASYNC_MODE=true
 ```
 
 ### Quick setup (shell)
@@ -72,71 +80,99 @@ source ~/.bashrc
 [System.Environment]::SetEnvironmentVariable("MEMOS_USER_ID", "user-123", "User")
 ```
 
-## How it Works / Usage
+## Commands
 
-Once installed and configured, this skill empowers your AI Agent to manage your long-term memories autonomously. You can directly use natural language with your Agent, and the Agent will call the underlying MemOS APIs based on conversation context.
+### 1. Search Memory
 
-### 1. Add Message (`/v1/add/message`)
-
-When you share preferences, facts, or instructions you want the Agent to remember, it will extract high-value content and save it to the MemOS cloud.
-
-Example conversation:
-
-- **You:** "Please remember that my primary programming language is Python and I prefer dark mode."
-- **Agent:** *(Recognizes intent -> Calls `add_message` skill)* "Got it! I've saved your preferences about Python and dark mode."
-
-### 2. Search Memory (`/v1/search/memory`)
-
-Before answering complex questions or when explicitly asked, the Agent searches your past memories to provide personalized responses.
-
-Example conversation:
-
-- **You:** "Write a boilerplate script for my usual tech stack."
-- **Agent:** *(Recognizes intent -> Calls `search` skill)* "Sure! Here is a set of Python boilerplate code..."
-
-### 3. Delete Memory (`/v1/delete/memory`)
-
-If a memory is outdated or incorrect, tell the Agent to forget it.
-
-Example conversation:
-
-- **You:** "Forget my previous residential address, I've moved."
-- **Agent:** *(Recognizes intent -> Calls `delete` skill)* "I have removed your old address from my memory."
-
-### 4. Add Feedback (`/v1/add/feedback`)
-
-You can correct the Agent's behavior, and it will reinforce its memory for future interactions.
-
-Example conversation:
-
-- **You:** "Your last answer wasn't detailed enough. Next time, always provide code comments."
-- **Agent:** *(Recognizes intent -> Calls `add_feedback` skill)* "Understood. I will add more details and code comments in the future."
-
-### 5. Add Knowledge Base Document (`/v1/add/knowledgebase-file`)
-
-Upload URLs, local files, or stdin content to a knowledge base.
+Search for long-term memories relevant to a query.
 
 ```bash
-# From files or URLs
-python3 scripts/memos_cloud.py add_kb_doc <knowledgebase_id> <file1> [file2 ...] [--type document|skill]
+python3 scripts/memos_cloud.py search [user_id] "<query>" [options]
+```
 
-# From stdin
+Options: `--conversation-id`, `--conversation-first-message`, `--filter`, `--knowledgebase-ids`, `--memory-limit-number`, `--include-preference`, `--preference-limit-number`, `--include-tool-memory`, `--tool-memory-limit-number`, `--include-skill`, `--skill-limit-number`, `--relativity`
+
+### 2. Add Message
+
+Store high-value content from conversations.
+
+```bash
+python3 scripts/memos_cloud.py add_message [user_id] [conversation_id] '<messages_json>' [options]
+```
+
+Options: `--conversation-first-message`, `--tags`, `--info`, `--allow-knowledgebase-ids`
+
+### 3. Delete Memory
+
+Delete stored memories by IDs.
+
+```bash
+python3 scripts/memos_cloud.py delete "id1,id2,id3"
+```
+
+### 4. Add Feedback
+
+Add feedback to correct or reinforce memory.
+
+```bash
+python3 scripts/memos_cloud.py add_feedback [user_id] <conversation_id> "<feedback>" [options]
+```
+
+Options: `--allow-knowledgebase-ids`, `--feedback-time`
+
+### 5. Add Knowledge Base Document
+
+Upload files to a knowledge base.
+
+```bash
+python3 scripts/memos_cloud.py add_kb_doc <knowledgebase_id> <file1> [file2 ...] [--type document|skill]
 python3 scripts/memos_cloud.py add_kb_doc <knowledgebase_id> --stdin [--name filename.ext] [--type document|skill]
 ```
 
-Local files are encoded as base64 automatically. With `--stdin`, content that is already valid base64 is used as-is; other bytes are encoded before upload.
+### 6. Get User Profile
 
-## Direct Script Usage
-
-The installed skill executes commands through `scripts/memos_cloud.py`:
+Retrieve the consolidated User Memory Profile.
 
 ```bash
-python3 scripts/memos_cloud.py search <user_id> "<query>" [--conversation-id <id>]
-python3 scripts/memos_cloud.py add_message <user_id> <conversation_id> '<messages_json_string>'
-python3 scripts/memos_cloud.py delete "id1,id2,id3"
-python3 scripts/memos_cloud.py add_feedback <user_id> <conversation_id> "<feedback_content>" [--allow-knowledgebase-ids "kb1,kb2"]
-python3 scripts/memos_cloud.py add_kb_doc <knowledgebase_id> <file1> [file2 ...] [--type document|skill]
+python3 scripts/memos_cloud.py get_user_profile [user_id] [options]
 ```
+
+Options: `--page`, `--size`, `--filter`, `--include-preference`, `--include-tool-memory`
+
+### 7. Create Knowledge Base
+
+Create a named container for structured documents.
+
+```bash
+python3 scripts/memos_cloud.py create_kb "<name>" [--description "<desc>"]
+```
+
+### 8. Get Knowledge Base Documents
+
+Get document metadata/details. Two modes (mutually exclusive):
+
+```bash
+python3 scripts/memos_cloud.py get_kb_docs --file-ids "id1,id2"
+python3 scripts/memos_cloud.py get_kb_docs --knowledgebase-id "kb-1" [--type document|skill] [--page 1] [--page-size 20]
+```
+
+### 9. Delete Knowledge Base Documents
+
+Delete documents from a knowledge base.
+
+```bash
+python3 scripts/memos_cloud.py delete_kb_docs "file-id-1,file-id-2"
+```
+
+### 10. Remove Knowledge Base
+
+Remove a knowledge base from the project.
+
+```bash
+python3 scripts/memos_cloud.py remove_kb "kb-123"
+```
+
+## Direct Script Usage
 
 For repository-local testing before installation:
 

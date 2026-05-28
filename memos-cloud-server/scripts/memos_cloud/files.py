@@ -6,6 +6,34 @@ from typing import BinaryIO, Dict, Iterable, Optional
 
 from .errors import FilePayloadError, ValidationError
 
+_MIME_MAP: dict[str, str] = {
+    ".txt": "text/plain",
+    ".pdf": "application/pdf",
+    ".doc": "application/msword",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".json": "application/json",
+    ".md": "text/markdown",
+    ".xml": "application/xml",
+    ".csv": "text/csv",
+    ".html": "text/html",
+    ".htm": "text/html",
+    ".xls": "application/vnd.ms-excel",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".ppt": "application/vnd.ms-powerpoint",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".svg": "image/svg+xml",
+    ".zip": "application/zip",
+}
+
+
+def infer_mime_type(file_path: str) -> str:
+    ext = os.path.splitext(file_path)[1].lower()
+    return _MIME_MAP.get(ext, "application/octet-stream")
+
 
 def build_file_payloads(
     files: Iterable[str],
@@ -36,9 +64,11 @@ def build_stdin_file_payload(
 ) -> Dict[str, str]:
     try:
         raw = stdin_buffer.read()
-        file_info = {
+        b64 = normalize_base64_content(raw)
+        mime_type = infer_mime_type(name) if name else "application/octet-stream"
+        file_info: Dict[str, str] = {
             "type": file_type,
-            "content": normalize_base64_content(raw),
+            "content": to_data_uri(mime_type, b64),
         }
         if name:
             file_info["name"] = name
@@ -47,6 +77,10 @@ def build_stdin_file_payload(
         if isinstance(exc, FilePayloadError):
             raise
         raise FilePayloadError("Stdin Error", f"Failed to read from stdin: {str(exc)}") from exc
+
+
+def to_data_uri(mime_type: str, base64_content: str) -> str:
+    return f"data:{mime_type};base64,{base64_content}"
 
 
 def build_local_file_payload(file_spec: str, file_type: str = "document") -> Dict[str, str]:
@@ -59,10 +93,12 @@ def build_local_file_payload(file_spec: str, file_type: str = "document") -> Dic
             f"Failed to read file '{file_spec}': {str(exc)}",
         ) from exc
 
+    mime_type = infer_mime_type(file_spec)
     return {
         "type": file_type,
         "name": os.path.basename(file_spec),
-        "content": encode_base64(file_data),
+        "content": to_data_uri(mime_type, encode_base64(file_data)),
+        "mime_type": mime_type,
     }
 
 
